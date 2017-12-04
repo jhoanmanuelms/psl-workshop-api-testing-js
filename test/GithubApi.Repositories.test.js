@@ -9,14 +9,10 @@ const urlBase = 'https://api.github.com';
 const githubUserName = 'aperdomob';
 const testRepo = 'jasmine-awesome-report';
 
-let readmeFile;
-let testRepoInfo;
-let userInfoReponse;
-let userReposResponse;
-
 describe('Github Repositories API Test', () => {
   describe('Given a user from Github', () => {
     describe('When using the Github API to get the user info', () => {
+      let userInfoReponse;
       before(() => {
         const request =
           agent.get(`${urlBase}/users/${githubUserName}`).then((response) => {
@@ -36,13 +32,15 @@ describe('Github Repositories API Test', () => {
     });
 
     describe('When using the Github API to get the user repositories', () => {
-      before(() => {
-        const request =
-          agent.get(userInfoReponse.body.repos_url).then((response) => {
-            userReposResponse = response;
+      let userReposResponse;
+      let testRepoInfo;
+      before((done) => {
+        agent.get(`${urlBase}/users/${githubUserName}`).then((response) => {
+          agent.get(response.body.repos_url).then((reposResponse) => {
+            userReposResponse = reposResponse;
+            done();
           });
-
-        return request;
+        });
       });
 
       it('Then the repos list should contain the expected repo', () => {
@@ -58,14 +56,17 @@ describe('Github Repositories API Test', () => {
 
     describe('When the user downloads a project', () => {
       let projectContent;
-      before(() => {
-        const request =
-          agent.get(`${testRepoInfo.svn_url}/archive/${testRepoInfo.default_branch}.zip`)
-            .buffer(true).then((response) => {
-              projectContent = response.text;
-            });
-
-        return request;
+      before((done) => {
+        agent.get(`${urlBase}/users/${githubUserName}`).then((response) => {
+          agent.get(response.body.repos_url).then((reposResponse) => {
+            const testRepoInfo = reposResponse.body.find(repo => repo.name === testRepo);
+            agent.get(`${testRepoInfo.svn_url}/archive/${testRepoInfo.default_branch}.zip`)
+              .buffer(true).then((projectContentResponse) => {
+                projectContent = projectContentResponse.text;
+                done();
+              });
+          });
+        });
       });
 
       it('Then the project should be downloaded with a valid MD5', () => {
@@ -75,13 +76,18 @@ describe('Github Repositories API Test', () => {
     });
 
     describe('When the user verifies the Read Me file metadata', () => {
-      before(() => {
-        const request =
-          agent.get(`${testRepoInfo.url}/contents`).then((response) => {
-            readmeFile = response.body.find(file => file.name === 'README.md');
-          });
+      let readmeFile;
 
-        return request;
+      before((done) => {
+        agent.get(`${urlBase}/users/${githubUserName}`).then((response) => {
+          agent.get(response.body.repos_url).then((reposResponse) => {
+            const testRepoInfo = reposResponse.body.find(repo => repo.name === testRepo);
+            agent.get(`${testRepoInfo.url}/contents`).then((projectContentResponse) => {
+              readmeFile = projectContentResponse.body.find(file => file.name === 'README.md');
+              done();
+            });
+          });
+        });
       });
 
       it('Then the Read Me file should be downloaded with valid data', () => {
@@ -96,13 +102,19 @@ describe('Github Repositories API Test', () => {
     describe('When the user verifies the Read Me file content', () => {
       let readmeFileContent;
 
-      before(() => {
-        const request =
-          agent.get(readmeFile.download_url).then((response) => {
-            readmeFileContent = response.text;
+      before((done) => {
+        agent.get(`${urlBase}/users/${githubUserName}`).then((response) => {
+          agent.get(response.body.repos_url).then((reposResponse) => {
+            const testRepoInfo = reposResponse.body.find(repo => repo.name === testRepo);
+            agent.get(`${testRepoInfo.url}/contents`).then((projectContentResponse) => {
+              const readmeFile = projectContentResponse.body.find(file => file.name === 'README.md');
+              agent.get(readmeFile.download_url).then((fileContentResponse) => {
+                readmeFileContent = fileContentResponse.text;
+                done();
+              });
+            });
           });
-
-        return request;
+        });
       });
 
       it('Then the Read Me file should be correctly downloaded', () => {
