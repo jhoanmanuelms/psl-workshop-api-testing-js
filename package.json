@@ -24,6 +24,7 @@
   "homepage": "https://github.com/jhoanmanuelms/psl-workshop-api-testing-js#readme",
   "devDependencies": {
     "chai": "^4.1.2",
+    "chai-subset": "^1.6.0",
     "eslint": "^4.8.0",
     "eslint-config-airbnb-base": "^12.0.2",
     "eslint-plugin-import": "^2.7.0",
@@ -32,6 +33,7 @@
     "mochawesome": "^2.3.1"
   },
   "dependencies": {
+    "md5": "^2.2.1",
     "superagent": "^3.6.0",
     "superagent-promise": "^1.1.0"
   }
